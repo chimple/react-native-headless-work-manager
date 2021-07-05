@@ -3,19 +3,24 @@ package com.infuse.headlessworkmanager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.work.Data;
 import androidx.work.WorkerParameters;
 
+import com.facebook.react.HeadlessJsTaskService;
+
+import java.util.List;
 import java.util.Set;
 
 public class Worker extends androidx.work.Worker {
+    private static String TAG = Worker.class.getSimpleName();
     private final Context context;
 
     public Worker(
-        @NonNull Context context,
-        @NonNull WorkerParameters params
+            @NonNull Context context,
+            @NonNull WorkerParameters params
     ) {
         super(context, params);
         this.context = context;
@@ -28,8 +33,12 @@ public class Worker extends androidx.work.Worker {
 
         Intent service = new Intent(this.context, HeadlessService.class);
         service.putExtras(extras);
-
-        this.context.startService(service);
+        HeadlessJsTaskService.acquireWakeLockNow(this.context);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            this.context.startForegroundService(service);
+        } else {
+            this.context.startService(service);
+        }
         return Result.success();
     }
 
